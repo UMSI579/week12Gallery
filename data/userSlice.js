@@ -29,8 +29,7 @@ export const subscribeToUserUpdates = (dispatch) => {
     dispatch(loadUsers(updatedUsers));
   });
 }
-//
-//
+
 export const loadUsers = createAsyncThunk(
   'chat/loadUsers',
   async (users) => {
@@ -65,15 +64,20 @@ export const userSlice = createSlice({
   name: 'users',
   initialState: {
     currentUser: {},
+    picture: {},
   },
-  // reducers is a mandatory argument even if all of our reducers
-  // are in extraReducers
-  reducers: [],
+  reducers: {
+    setPicture: (state, action) => {
+      state.picture = action.payload
+    },
+  },
   extraReducers: (builder) => {
     builder.addCase(setUser.fulfilled, (state, action) => {
       state.currentUser = action.payload
     });
   }
 })
+
+export const {setPicture} = userSlice.actions;
 
 export default userSlice.reducer

@@ -1,11 +1,12 @@
 import { Button } from '@rneui/themed';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { useSelector } from 'react-redux';
 import { signOut } from '../AuthManager';
 
 function HomeScreen({navigation}) {
   const currentUser = useSelector(state => state.userSlice.currentUser);
-
+  const picture = useSelector(state => state.userSlice.picture);
+  console.log('PICTURE', picture);
   console.log('in HomeScreen, currentUser:', currentUser);
   return (
     <View style={styles.container}>
@@ -25,6 +26,10 @@ function HomeScreen({navigation}) {
         Hi, {currentUser?.displayName}! Here are your photos:
       </Text>
       <View style={styles.listContainer}>
+        <Image
+          style={styles.logo}
+          source={picture}
+        />
       </View>
       <Button
         onPress={async () => {
@@ -54,7 +59,14 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 0.8,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    width: '100%' // add this too, we'll need it soon
+  },
+
+  logo: {
+    width: 400,
+    height: 400,
+    resizeMode: 'contain'
   }
 });
 

@@ -24,7 +24,8 @@
     "rneui": "^1.0.0-stable.0",
     "react-native-web": "~0.19.10",
     "react-dom": "18.2.0",
-    "@expo/metro-runtime": "~3.2.3"
+    "@expo/metro-runtime": "~3.2.3",
+    "expo-camera": "~15.0.16"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0"
