@@ -4,6 +4,13 @@ import { initializeApp, getApps } from 'firebase/app';
 import {setDoc, doc, getFirestore, collection, onSnapshot, getDoc} from 'firebase/firestore';
 import { firebaseConfig } from '../Secrets';
 
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from 'firebase/storage';
+
 
 
 let app;
@@ -14,7 +21,31 @@ if (apps.length == 0) {
   app = apps[0];
 }
 const db = getFirestore(app);
+const storage = getStorage(app);
 
+export const setPicture = createAsyncThunk(
+  'app/setPicture',
+  async (pictureObject) => {
+    const currentPhotoRef = ref(storage, 'images/currentPhoto.jpg');
+    try {
+      // fetch the image object (blob) from the local filesystem
+      const response = await fetch(pictureObject.uri);
+
+      // blob: binary large object
+      const imageBlob = await response.blob();
+
+      // then upload it to Firebase Storage
+      await uploadBytes(currentPhotoRef, imageBlob);
+
+      // get the URL
+      const downloadURL = await getDownloadURL(currentPhotoRef);
+      console.log('THE DOWNLOAD URL', downloadURL)
+      return downloadURL;
+    } catch (e) {
+      console.log("Error saving picture:", e);
+    }
+  }
+);
 
 export const subscribeToUserUpdates = (dispatch) => {
   let snapshotUnsubscribe = undefined;
@@ -67,17 +98,16 @@ export const userSlice = createSlice({
     picture: {},
   },
   reducers: {
-    setPicture: (state, action) => {
-      state.picture = action.payload
-    },
   },
   extraReducers: (builder) => {
     builder.addCase(setUser.fulfilled, (state, action) => {
       state.currentUser = action.payload
     });
+    builder.addCase(setPicture.fulfilled, (state, action) => {
+      state.picture = action.payload
+    })
   }
 })
 
-export const {setPicture} = userSlice.actions;
 
 export default userSlice.reducer

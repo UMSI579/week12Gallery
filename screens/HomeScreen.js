@@ -2,12 +2,12 @@ import { Button } from '@rneui/themed';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { useSelector } from 'react-redux';
 import { signOut } from '../AuthManager';
+import {useEffect} from "react";
 
 function HomeScreen({navigation}) {
   const currentUser = useSelector(state => state.userSlice.currentUser);
   const picture = useSelector(state => state.userSlice.picture);
-  console.log('PICTURE', picture);
-  console.log('in HomeScreen, currentUser:', currentUser);
+
   return (
     <View style={styles.container}>
       <View style={styles.navHeader}>
@@ -28,7 +28,7 @@ function HomeScreen({navigation}) {
       <View style={styles.listContainer}>
         <Image
           style={styles.logo}
-          source={picture}
+          source={{uri: picture}}
         />
       </View>
       <Button
