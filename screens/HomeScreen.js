@@ -1,12 +1,22 @@
 import { Button } from '@rneui/themed';
-import { View, Text, StyleSheet, Image } from 'react-native';
-import { useSelector } from 'react-redux';
-import { signOut } from '../AuthManager';
+import { View, Text, StyleSheet, Image, FlatList } from 'react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {subscribeToUserOnSnapshot} from "../data/userSlice";
 import {useEffect} from "react";
+import { signOut } from '../AuthManager';
 
+let currentUserId;
 function HomeScreen({navigation}) {
   const currentUser = useSelector(state => state.userSlice.currentUser);
-  const picture = useSelector(state => state.userSlice.picture);
+  const gallery = currentUser.gallery;
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+    if (currentUser?.key && currentUser.key !== currentUserId) {
+      currentUserId = currentUser.key
+      subscribeToUserOnSnapshot(currentUser.key, dispatch)
+    }
+  }, [currentUser]);
 
   return (
     <View style={styles.container}>
@@ -26,9 +36,21 @@ function HomeScreen({navigation}) {
         Hi, {currentUser?.displayName}! Here are your photos:
       </Text>
       <View style={styles.listContainer}>
-        <Image
-          style={styles.logo}
-          source={{uri: picture}}
+
+        <FlatList
+          data={gallery}
+          keyExtractor={item=>item.uri}
+          renderItem={({item}) => {
+
+            return (
+              <View>
+                <Image
+                  style={styles.logo}
+                  source={item}
+                />
+              </View>
+            );
+          }}
         />
       </View>
       <Button
@@ -63,9 +85,10 @@ const styles = StyleSheet.create({
     width: '100%' // add this too, we'll need it soon
   },
 
+
   logo: {
-    width: 400,
-    height: 400,
+    width: 200,
+    height: 200,
     resizeMode: 'contain'
   }
 });

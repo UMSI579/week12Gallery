@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-
 import { initializeApp, getApps } from 'firebase/app';
-import {setDoc, doc, getFirestore, collection, onSnapshot, getDoc} from 'firebase/firestore';
+import {updateDoc, setDoc, doc, getFirestore, collection, onSnapshot, getDoc} from 'firebase/firestore';
 import { firebaseConfig } from '../Secrets';
 
 import {
@@ -25,8 +24,9 @@ const storage = getStorage(app);
 
 export const setPicture = createAsyncThunk(
   'app/setPicture',
-  async (pictureObject) => {
-    const currentPhotoRef = ref(storage, 'images/currentPhoto.jpg');
+  async (pictureObject, {getState}) => {
+    const fileName = pictureObject.uri.split('/').pop();
+    const currentPhotoRef = ref(storage, `images/${fileName}`);
     try {
       // fetch the image object (blob) from the local filesystem
       const response = await fetch(pictureObject.uri);
@@ -39,7 +39,18 @@ export const setPicture = createAsyncThunk(
 
       // get the URL
       const downloadURL = await getDownloadURL(currentPhotoRef);
-      console.log('THE DOWNLOAD URL', downloadURL)
+      const currentUser = getState().userSlice.currentUser;
+
+      const newPicture = {
+        ...pictureObject,
+        uri: downloadURL
+      }
+      const newGallery = currentUser.gallery ?
+        currentUser.gallery.concat(newPicture) :
+        [newPicture];
+
+      // update the user doc with the new gallery
+      await updateDoc(doc(db, 'users', currentUser.key), {gallery: newGallery});
       return downloadURL;
     } catch (e) {
       console.log("Error saving picture:", e);
@@ -61,13 +72,13 @@ export const subscribeToUserUpdates = (dispatch) => {
   });
 }
 
+
 export const loadUsers = createAsyncThunk(
   'chat/loadUsers',
   async (users) => {
     return [...users];
   }
 )
-
 
 export const addUser = createAsyncThunk(
   'app/addUser',
@@ -84,11 +95,27 @@ export const addUser = createAsyncThunk(
 export const setUser = createAsyncThunk(
   'add/setUser',
   async (authUser) => {
-    const userSnap = await getDoc(doc(db, 'users', authUser.uid));
-    const user = userSnap.data();
-    return user;
+    try {
+      const userSnap = await getDoc(doc(db, 'users', authUser.uid));
+      const user = userSnap.data();
+      return user;
+    } catch (e) {
+      console.log('problem setting user', e)
+    }
+
   }
 )
+
+export const subscribeToUserOnSnapshot = (userId, dispatch) => {
+  onSnapshot(doc(db, 'users', userId), (userSnapshot) => {
+    const updatedUser = {
+      ...userSnapshot.data(),
+      key: userSnapshot.id
+    };
+    dispatch(setUser(updatedUser));
+  });
+}
+
 
 
 export const userSlice = createSlice({
@@ -101,7 +128,7 @@ export const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(setUser.fulfilled, (state, action) => {
-      state.currentUser = action.payload
+      state.currentUser = {...action.payload}
     });
     builder.addCase(setPicture.fulfilled, (state, action) => {
       state.picture = action.payload
